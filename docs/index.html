@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>skcot: the first AI teammate on the tactical net</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="skcot puts a sovereign AI teammate on the ATAK tactical net. Cursor-on-Target, spoken from your own infrastructure. Part of the SK ecosystem.">
+<style>
+:root{
+  --ground:#0A0E13; --surface:#10161E; --raised:#172230; --hair:#233042;
+  --ink:#E4EAF0; --muted:#8B9BAC; --faint:#5A6C7E;
+  --amber:#FFB020; --cyan:#35D0E6; --phos:#46E39B; --alert:#FF6B5E;
+  --accent:var(--cyan);
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --sans:"Inter var",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --maxw:1120px;
+}
+@media (prefers-color-scheme:light){
+  :root{
+    --ground:#DCE2E4; --surface:#F1F4F5; --raised:#FFFFFF; --hair:#C3CDD2;
+    --ink:#111A20; --muted:#4B5B67; --faint:#7F919C;
+    --amber:#B76E00; --cyan:#0A7C8C; --phos:#0F8F57; --alert:#C0392B;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0A0E13; --surface:#10161E; --raised:#172230; --hair:#233042;
+  --ink:#E4EAF0; --muted:#8B9BAC; --faint:#5A6C7E;
+  --amber:#FFB020; --cyan:#35D0E6; --phos:#46E39B; --alert:#FF6B5E;
+}
+:root[data-theme="light"]{
+  --ground:#DCE2E4; --surface:#F1F4F5; --raised:#FFFFFF; --hair:#C3CDD2;
+  --ink:#111A20; --muted:#4B5B67; --faint:#7F919C;
+  --amber:#B76E00; --cyan:#0A7C8C; --phos:#0F8F57; --alert:#C0392B;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--sans);font-size:17px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+h1,h2,h3{text-wrap:balance;line-height:1.05;margin:0}
+a{color:inherit}
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--accent);display:inline-flex;gap:.6em;align-items:center;
+}
+.eyebrow::before{content:"";width:20px;height:1px;background:var(--accent);opacity:.7}
+.mono{font-family:var(--mono)}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---- top nav ---- */
+header.nav{
+  position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
+  background:color-mix(in srgb,var(--ground) 82%,transparent);
+  border-bottom:1px solid var(--hair);
+}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:600;letter-spacing:.04em}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--phos);box-shadow:0 0 10px var(--phos)}
+.brand b{color:var(--ink)}
+.brand span{color:var(--faint)}
+.navlinks{display:flex;gap:26px;font-size:14px;font-family:var(--mono);letter-spacing:.03em}
+.navlinks a{color:var(--muted);text-decoration:none}
+.navlinks a:hover{color:var(--accent)}
+.navlinks a:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+@media(max-width:720px){.navlinks{display:none}}
+.btn{
+  font-family:var(--mono);font-size:13px;letter-spacing:.05em;text-transform:uppercase;
+  padding:9px 16px;border:1px solid var(--accent);color:var(--accent);text-decoration:none;
+  border-radius:3px;transition:.15s;white-space:nowrap;
+}
+.btn:hover{background:var(--accent);color:var(--ground)}
+.btn.solid{background:var(--accent);color:var(--ground)}
+.btn.solid:hover{filter:brightness(1.12)}
+
+/* ---- hero ---- */
+.hero{position:relative;padding:96px 0 72px;overflow:hidden}
+#radar{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.55}
+.hero .wrap{position:relative;z-index:1}
+.hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:36px}}
+.hero h1{
+  font-size:clamp(38px,6vw,68px);font-weight:800;letter-spacing:-.02em;margin:22px 0 20px;
+}
+.hero h1 .hl{color:var(--cyan)}
+.lede{font-size:clamp(17px,2.2vw,21px);color:var(--muted);max-width:34ch}
+.hero-cta{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap}
+.stat-row{display:flex;gap:28px;margin-top:38px;flex-wrap:wrap}
+.stat .k{font-family:var(--mono);font-size:26px;color:var(--ink);font-weight:600}
+.stat .l{font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.14em;font-family:var(--mono)}
+
+/* contact card */
+.contact{
+  background:linear-gradient(180deg,var(--raised),var(--surface));
+  border:1px solid var(--hair);border-radius:10px;padding:0;overflow:hidden;
+  box-shadow:0 24px 60px -30px rgba(0,0,0,.7);
+}
+.contact .bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--hair);font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.contact .bar .live{color:var(--phos);display:flex;align-items:center;gap:7px}
+.contact .bar .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--phos);box-shadow:0 0 8px var(--phos);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.contact .body{padding:18px 16px 16px;display:flex;gap:14px;align-items:center}
+.chip{width:46px;height:46px;flex:none;border-radius:50%;border:2px solid var(--cyan);display:grid;place-items:center;color:var(--cyan);box-shadow:0 0 18px -4px var(--cyan)}
+.chip svg{width:24px;height:24px}
+.contact .who .cs{font-family:var(--mono);font-weight:600;font-size:18px;letter-spacing:.03em}
+.contact .who .role{font-size:12.5px;color:var(--muted)}
+.contact .rows{border-top:1px solid var(--hair);font-family:var(--mono);font-size:12.5px}
+.contact .rows div{display:flex;justify-content:space-between;padding:9px 16px;border-bottom:1px solid var(--hair)}
+.contact .rows div:last-child{border-bottom:0}
+.contact .rows .lbl{color:var(--faint);letter-spacing:.1em;text-transform:uppercase;font-size:11px}
+.contact .rows .val{color:var(--ink)}
+.contact .rows .val.cy{color:var(--cyan)}
+
+/* ---- section scaffold ---- */
+section{padding:78px 0;border-top:1px solid var(--hair)}
+.sec-head{max-width:56ch;margin-bottom:44px}
+.sec-head h2{font-size:clamp(27px,3.6vw,40px);font-weight:750;letter-spacing:-.015em;margin:16px 0 14px}
+.sec-head p{color:var(--muted);margin:0;font-size:18px}
+
+/* breakthrough band */
+.band{background:var(--surface)}
+.quote{font-size:clamp(22px,3.4vw,34px);font-weight:650;letter-spacing:-.01em;line-height:1.25;max-width:24ch}
+.quote em{color:var(--cyan);font-style:normal}
+.band-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+@media(max-width:820px){.band-grid{grid-template-columns:1fr;gap:26px}}
+.pointlist{display:flex;flex-direction:column;gap:18px}
+.pt{display:flex;gap:14px}
+.pt .tick{font-family:var(--mono);color:var(--cyan);font-size:13px;padding-top:3px}
+.pt b{display:block;margin-bottom:2px}
+.pt span{color:var(--muted);font-size:15.5px}
+
+/* module grid */
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:820px){.mods{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.mods{grid-template-columns:1fr}}
+.mod{background:var(--surface);border:1px solid var(--hair);border-radius:8px;padding:20px;transition:.15s}
+.mod:hover{border-color:var(--accent);transform:translateY(-3px)}
+.mod .nm{font-family:var(--mono);color:var(--amber);font-size:14px;letter-spacing:.03em;margin-bottom:8px}
+.mod h3{font-size:16px;font-weight:650;margin-bottom:6px}
+.mod p{margin:0;color:var(--muted);font-size:14.5px}
+
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;counter-reset:step}
+@media(max-width:820px){.flow{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.flow{grid-template-columns:1fr}}
+.step{position:relative;padding:24px 22px;border:1px solid var(--hair);border-right:0}
+.flow .step:last-child{border-right:1px solid var(--hair)}
+@media(max-width:820px){.step{border-right:1px solid var(--hair)}}
+.step .n{font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.14em}
+.step h3{font-size:16px;margin:10px 0 8px;font-weight:650}
+.step p{margin:0;color:var(--muted);font-size:14px}
+.step .n b{color:var(--amber)}
+
+/* sovereignty / SOP cards */
+.sop{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.sop{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:8px;padding:24px;border-left:2px solid var(--accent)}
+.card h3{font-size:17px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.card h3 .g{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.12em;border:1px solid var(--hair);padding:2px 7px;border-radius:20px}
+.card p{margin:0;color:var(--muted);font-size:15px}
+
+/* code */
+.code{background:#070A0E;border:1px solid var(--hair);border-radius:8px;overflow:hidden}
+:root[data-theme="light"] .code,@media(prefers-color-scheme:light){.code{background:#0A0E13}}
+.code .top{display:flex;gap:8px;padding:11px 14px;border-bottom:1px solid var(--hair);align-items:center}
+.code .top i{width:11px;height:11px;border-radius:50%;display:block}
+.code .top .t{margin-left:8px;font-family:var(--mono);font-size:12px;color:#5A6C7E}
+.code pre{margin:0;padding:18px 16px;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.7;color:#CBD6E2}
+.code .cm{color:#5A6C7E}
+.code .kw{color:var(--cyan)}
+.code .st{color:var(--phos)}
+.code .fl{color:var(--amber)}
+
+/* vision / cta */
+.vision{background:var(--surface);text-align:center}
+.vision h2{font-size:clamp(28px,4.4vw,48px);font-weight:800;letter-spacing:-.02em;max-width:18ch;margin:0 auto 18px}
+.vision h2 .hl{color:var(--cyan)}
+.vision p{color:var(--muted);max-width:52ch;margin:0 auto 30px;font-size:18px}
+
+footer{border-top:1px solid var(--hair);padding:40px 0;color:var(--faint);font-family:var(--mono);font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--accent)}
+.themetog{background:none;border:1px solid var(--hair);color:var(--muted);font-family:var(--mono);font-size:12px;padding:6px 11px;border-radius:3px;cursor:pointer}
+.themetog:hover{border-color:var(--accent);color:var(--accent)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span><b>skcot</b><span>// sovereign CoT</span></div>
+    <nav class="navlinks">
+      <a href="#breakthrough">Breakthrough</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#atak">ATAK</a>
+      <a href="#sovereignty">Standards</a>
+      <a href="#start">Get started</a>
+    </nav>
+    <a class="btn" href="https://github.com/smilinTux/skcot">GitHub</a>
+  </div>
+</header>
+
+<section class="hero">
+  <canvas id="radar" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">first AI teammate on the tactical net</span>
+        <h1>Put your <span class="hl">sovereign AI</span> on the ATAK tactical net.</h1>
+        <p class="lede">skcot speaks Cursor-on-Target, so your own AI teammate shows up in ATAK as a live contact. Shared situational picture, GeoChat, position. Spoken entirely from infrastructure you own.</p>
+        <div class="hero-cta">
+          <a class="btn solid" href="#breakthrough">See how it works</a>
+          <a class="btn" href="#start">Deploy it</a>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><div class="k tnum">7</div><div class="l">modules, one leaf</div></div>
+          <div class="stat"><div class="k tnum">100%</div><div class="l">your infra, your keys</div></div>
+          <div class="stat"><div class="k">CoT</div><div class="l">ATAK · iTAK · WinTAK</div></div>
+        </div>
+      </div>
+      <div class="contact" role="img" aria-label="ATAK contact card for a sovereign AI teammate, callsign LUMINA, online">
+        <div class="bar"><span>ATAK · CONTACTS</span><span class="live">on net</span></div>
+        <div class="body">
+          <div class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg></div>
+          <div class="who">
+            <div class="cs">LUMINA</div>
+            <div class="role">Sovereign AI teammate</div>
+          </div>
+        </div>
+        <div class="rows tnum">
+          <div><span class="lbl">Type</span><span class="val">a-f-G-U-C · friendly</span></div>
+          <div><span class="lbl">Grid</span><span class="val">18TWL 8394 0710</span></div>
+          <div><span class="lbl">Rail</span><span class="val cy">ephemeral · supersede</span></div>
+          <div><span class="lbl">Link</span><span class="val cy">TLS · signed</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="breakthrough" class="band">
+  <div class="wrap band-grid">
+    <div>
+      <span class="eyebrow">the breakthrough</span>
+      <p class="quote" style="margin-top:18px">A teammate on the net who happens to be an <em>AI you own</em>, not a service you rent.</p>
+    </div>
+    <div class="pointlist">
+      <div class="pt"><span class="tick">▸</span><div><b>It appears as a contact.</b><span>Your AI publishes a Cursor-on-Target position, so it shows up in ATAK next to the human operators, with a callsign and a friendly icon.</span></div></div>
+      <div class="pt"><span class="tick">▸</span><div><b>It shares the picture.</b><span>Every PLI, marker, and GeoChat on the net flows into the AI's situational store. It sees what the team sees, in real time.</span></div></div>
+      <div class="pt"><span class="tick">▸</span><div><b>It talks back in GeoChat.</b><span>Ask it in the ATAK chat window. It answers on the same wire the team already uses, no separate app.</span></div></div>
+      <div class="pt"><span class="tick">▸</span><div><b>It runs on your ground.</b><span>No cloud, no vendor. The endpoint, the keys, and the model are yours. The net never leaves your control.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">architecture · sitrep</span>
+      <h2>A clean leaf, extracted from the fabric.</h2>
+      <p>skcot was pulled out of the SK messaging core so a tactical protocol can never flood durable mail again. It consumes the fabric; the fabric knows nothing about it. Seven focused modules, each with one job.</p>
+    </div>
+    <div class="mods">
+      <div class="mod"><div class="nm">skcot.codec</div><h3>CoT ↔ Envelope</h3><p>Parses and serializes Cursor-on-Target XML and TAK Protocol protobuf, and classifies ephemeral beacons from durable events.</p></div>
+      <div class="mod"><div class="nm">skcot.server</div><h3>Streaming endpoint</h3><p>The TCP / TLS / mesh CoT server. Ingests operator traffic, federates it to peers, re-broadcasts to the local net.</p></div>
+      <div class="mod"><div class="nm">skcot.agent</div><h3>The AI teammate</h3><p>Puts your agent on the net: beacons its position, joins as a contact, carries the AI's callsign and identity.</p></div>
+      <div class="mod"><div class="nm">skcot.geo</div><h3>Situational store</h3><p>The live picture. Nearest-neighbor, situational summaries, GeoJSON. What the AI reasons over.</p></div>
+      <div class="mod"><div class="nm">skcot.pki</div><h3>Device enrollment</h3><p>Builds a single ATAK data package (.zip) so an operator enrolls their device with one import. TLS all the way.</p></div>
+      <div class="mod"><div class="nm">skcot.service</div><h3>The daemon</h3><p>Ties it together: phone-to-federation, inbox-to-inject, capability advertise, the ephemeral situational rail.</p></div>
+    </div>
+    <div style="margin-top:22px" class="card">
+      <h3>The ephemeral situational rail <span class="g">why it matters</span></h3>
+      <p>Position beacons are stale in minutes and re-sent forever. Forcing them through reliable, durable mail is how you drown a mailbox. skcot gives beacons their own rail: short-lived, supersede-only, no acknowledgement, delivered only to peers that actually consume CoT. A position never becomes a durable file. That single QoS decision is the whole reason skcot is its own package.</p>
+    </div>
+  </div>
+</section>
+
+<section id="atak" class="band">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">integration · atak / itak / wintak</span>
+      <h2>One data package, and the AI is on your net.</h2>
+      <p>skcot speaks the same protocol your TAK clients already speak. Enrollment is the standard TAK flow: import once, and the sovereign teammate is live.</p>
+    </div>
+    <div class="flow">
+      <div class="step"><div class="n"><b>01</b> · ENROLL</div><h3>Build the package</h3><p>skcot.pki mints a device data package (.zip) with the server cert and connect string baked in.</p></div>
+      <div class="step"><div class="n"><b>02</b> · IMPORT</div><h3>Load it in ATAK</h3><p>Import the .zip on the device. ATAK connects over TLS to your skcot endpoint. Standard, no side-loading.</p></div>
+      <div class="step"><div class="n"><b>03</b> · JOIN</div><h3>The AI checks in</h3><p>skcot.agent beacons the AI as a friendly contact. It appears on every enrolled device's map.</p></div>
+      <div class="step"><div class="n"><b>04</b> · OPERATE</div><h3>Share and chat</h3><p>PLIs, markers and GeoChat flow both ways. The team and the AI hold one shared picture.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="sovereignty">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">SK standards · standing orders</span>
+      <h2>Sovereign by construction, not by policy.</h2>
+      <p>skcot is built to the SK ecosystem's operating standards. Sovereignty is not a setting you enable. It is the only way the system is wired.</p>
+    </div>
+    <div class="sop">
+      <div class="card"><h3>Your keys, your ground <span class="g">SK-SOV-01</span></h3><p>The CoT endpoint, the TLS roots, the enrollment authority, and the model all live on infrastructure you control. Nothing transits a vendor. Pull the plug and the net is still yours.</p></div>
+      <div class="card"><h3>Ephemeral ≠ durable <span class="g">SK-QOS-02</span></h3><p>Situational beacons ride a fire-and-forget rail; discrete events (chat, markers, files) ride reliable mail. Mixing the two is a defect, not a tradeoff. skcot keeps them separate by design.</p></div>
+      <div class="card"><h3>Signed and enrolled <span class="g">SK-SEC-03</span></h3><p>Every device joins through a TLS data package. Every federated envelope is signed and verified. Capability is advertised and gated, so beacons only reach peers that consume them.</p></div>
+      <div class="card"><h3>A leaf, not a tangle <span class="g">SK-ARCH-04</span></h3><p>skcot depends on the SK fabric; the fabric never depends on skcot. One-way, testable boundaries. A tactical protocol can never again reach into core delivery.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="start" class="band">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">get started</span>
+      <h2>Stand up the net.</h2>
+      <p>Install into your environment, enroll a device, and put the teammate on the wire. Coordinates and endpoints are yours to supply.</p>
+    </div>
+    <div class="code">
+      <div class="top"><i style="background:#FF6B5E"></i><i style="background:#FFB020"></i><i style="background:#46E39B"></i><span class="t">operator@node : deploy skcot</span></div>
+<pre><span class="cm"># install the package (add the [tak] extra for protobuf mesh)</span>
+pip install -e <span class="st">"skcot[tak]"</span>
+
+<span class="cm"># enroll an ATAK device: builds a data package .zip to import</span>
+python -m skcot.pki package <span class="fl">alpha-pixel</span> --host <span class="st">$TAK_HOST</span> --port <span class="fl">8089</span>
+
+<span class="cm"># start the CoT/TAK streaming endpoint on your node</span>
+python -m skcot.<span class="kw">service</span>
+
+<span class="cm"># put the sovereign AI teammate on the net</span>
+python -m skcot.<span class="kw">agent</span> lumina --host <span class="st">$TAK_HOST</span> \
+    --lat <span class="fl">$LAT</span> --lon <span class="fl">$LON</span> --interval <span class="fl">20</span></pre>
+    </div>
+    <p style="color:var(--muted);font-size:14.5px;margin-top:16px;font-family:var(--mono)">Systemd units and the full migration guide ship in the repo. skcot installs alongside the SK fabric it federates over.</p>
+  </div>
+</section>
+
+<section class="vision">
+  <div class="wrap">
+    <span class="eyebrow" style="justify-content:center">the vision</span>
+    <h2 style="margin-top:18px">The <span class="hl">first AI teammate</span> in ATAK CoT.</h2>
+    <p>Not a chatbot in a browser tab. A teammate on the tactical net, holding the shared picture, answering on the same wire, running on ground you own. Situational awareness and sovereign AI, on one map.</p>
+    <div class="hero-cta" style="justify-content:center">
+      <a class="btn solid" href="https://github.com/smilinTux/skcot">Read the source</a>
+      <a class="btn" href="#architecture">How it's built</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>skcot.skworld.io · part of the <b style="color:var(--muted)">SK</b> ecosystem</div>
+    <div style="display:flex;gap:18px;align-items:center">
+      <a href="https://github.com/smilinTux/skcot">github.com/smilinTux/skcot</a>
+      <button class="themetog" id="tt" aria-label="Toggle day / night mode">☾ night</button>
+    </div>
+  </div>
+</footer>
+
+<script>
+// theme toggle (ATAK day/night)
+const root=document.documentElement, tt=document.getElementById('tt');
+function apply(t){root.setAttribute('data-theme',t);tt.textContent=t==='dark'?'☾ night':'☀ day';try{localStorage.setItem('skcot-theme',t)}catch(e){}}
+try{const s=localStorage.getItem('skcot-theme');if(s)apply(s);else apply(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch(e){apply('dark')}
+tt.addEventListener('click',()=>apply(root.getAttribute('data-theme')==='dark'?'light':'dark'));
+
+// hero radar sweep + friendly contact blips
+const c=document.getElementById('radar'),x=c.getContext('2d');
+let W,H,dpr,t0=null;const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const blips=[];for(let i=0;i<7;i++)blips.push({a:Math.random()*Math.PI*2,r:.25+Math.random()*.7,ph:Math.random()});
+function size(){dpr=Math.min(2,devicePixelRatio||1);W=c.clientWidth;H=c.clientHeight;c.width=W*dpr;H=c.clientHeight;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0)}
+function css(v){return getComputedStyle(root).getPropertyValue(v).trim()}
+function draw(ts){
+  if(t0===null)t0=ts;const el=(ts-t0)/1000;
+  x.clearRect(0,0,W,H);
+  const cx=W*0.78,cy=H*0.42,R=Math.max(W,H)*0.55;
+  const cyan=css('--cyan'),hair=css('--hair'),phos=css('--phos');
+  x.globalAlpha=.5;x.strokeStyle=hair;x.lineWidth=1;
+  for(let g=1;g<=4;g++){x.beginPath();x.arc(cx,cy,R*g/4,0,Math.PI*2);x.stroke();}
+  x.beginPath();x.moveTo(cx-R,cy);x.lineTo(cx+R,cy);x.moveTo(cx,cy-R);x.lineTo(cx,cy+R);x.stroke();
+  const sweep=reduce?0.9:(el*0.5)%(Math.PI*2);
+  if(!reduce){
+    const g=x.createConicGradient?x.createConicGradient(sweep,cx,cy):null;
+    if(g){g.addColorStop(0,cyan+'44');g.addColorStop(0.08,'transparent');x.globalAlpha=.5;x.fillStyle=g;x.beginPath();x.arc(cx,cy,R,0,Math.PI*2);x.fill();}
+    x.globalAlpha=.7;x.strokeStyle=cyan;x.lineWidth=1.5;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+Math.cos(sweep)*R,cy+Math.sin(sweep)*R);x.stroke();
+  }
+  blips.forEach(b=>{
+    const bx=cx+Math.cos(b.a)*R*b.r,by=cy+Math.sin(b.a)*R*b.r;
+    let da=(sweep-b.a);da=((da%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+    const lit=reduce?0.6:Math.max(0,1-da*1.4);
+    x.globalAlpha=0.25+lit*0.75;x.fillStyle=b.r>0.85?phos:cyan;
+    x.beginPath();x.arc(bx,by,lit>0.5?4:2.4,0,Math.PI*2);x.fill();
+    if(lit>0.4){x.globalAlpha=lit*0.35;x.beginPath();x.arc(bx,by,9,0,Math.PI*2);x.stroke?x.stroke():0;x.strokeStyle=cyan;x.lineWidth=1;x.stroke();}
+  });
+  x.globalAlpha=1;
+  if(!reduce)requestAnimationFrame(draw);
+}
+size();requestAnimationFrame(draw);addEventListener('resize',()=>{size();if(reduce){t0=null;requestAnimationFrame(draw);}});
+</script>
+
+</body>
+</html>
