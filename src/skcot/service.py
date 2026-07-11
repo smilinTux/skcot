@@ -98,6 +98,78 @@ async def _inbox_inject_loop(
         await asyncio.sleep(poll_s)
 
 
+def advertise_cot_capability(sk=None) -> None:
+    """Ensure this node's realm-directory entry advertises the ``cot`` capability.
+
+    Called on skcot startup (:func:`main`) so the beacon peer-gate
+    (``skcot.server._cot_peer_fqids`` / ``_cot_gate_active``) can eventually
+    self-configure from this node's own advertised capabilities instead of a
+    manual ``SKCOMMS_COT_PEERS`` allowlist: once this node's realm-directory
+    entry carries ``"cot"``, anything that resolves it via
+    :mod:`skcomms.skfed_resolve` (or the realm directory) sees it as a CoT
+    consumer.
+
+    :func:`skcomms.skfed_directory.publish_self_to_realm_directory` OVERWRITES
+    the ``caps`` field on upsert -- it does not merge. So this reads the
+    node's *current* directory entry first and unions ``"cot"`` into whatever
+    is already there, preserving any other advertised tags (``dm``,
+    ``files``, ...). Idempotent: calling it twice does not duplicate the tag.
+
+    Fails soft (logs + returns) if no fqid, signing key, or inbox URL can be
+    resolved -- cot-capability advertisement must never block the CoT TCP/TLS
+    /mesh service from starting.
+
+    Args:
+        sk: Optional live :class:`~skcomms.core.SKComms` instance (its
+            configured identity name is used to load the right node key).
+    """
+    from skcomms import skfed_announce as sfa
+    from skcomms import skfed_directory as sfd
+
+    agent = getattr(sk, "_identity", None) if sk is not None else None
+    ident = resolve_self_identity(agent)
+    fqid = ident.get("fqid")
+    if not fqid:
+        logger.debug("advertise_cot_capability: no fqid resolved, skipping")
+        return
+    agent = agent or ident.get("agent")
+
+    try:
+        existing_dir = sfd.load_directory()
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("advertise_cot_capability: could not load realm directory: %s", exc)
+        existing_dir = None
+    existing = existing_dir.get(fqid) if existing_dir is not None else None
+
+    caps = list(existing.caps) if existing is not None else []
+    if "cot" not in caps:
+        caps.append("cot")
+
+    inbox_url = existing.inbox_url if existing is not None else None
+    prekey_url = existing.prekey_url if existing is not None else None
+    did = existing.did if existing is not None else None
+
+    if inbox_url is None:
+        inbox_url = os.environ.get("SKFED_INBOX_URL")
+    if inbox_url is None:
+        base = sfa.resolve_base()
+        if base:
+            inbox_url = base.rstrip("/") + sfa.INBOX_PATH
+            if prekey_url is None:
+                prekey_url = base.rstrip("/") + sfa.PREKEY_PATH
+    if inbox_url is None:
+        logger.debug("advertise_cot_capability: no inbox URL resolvable, skipping")
+        return
+
+    try:
+        sfd.publish_self_to_realm_directory(
+            fqid, inbox_url, prekey_url, did=did, caps=caps, agent=agent,
+        )
+        logger.info("advertised cot capability for %s (caps=%s)", fqid, caps)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("advertise_cot_capability: could not publish cot capability: %s", exc)
+
+
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     ident = resolve_self_identity()
@@ -108,6 +180,7 @@ async def main() -> None:
     from skcomms.core import SKComms  # local import — avoids heavy import at module load
 
     sk = SKComms.from_config()
+    advertise_cot_capability(sk)  # self-configure the beacon peer-gate (no manual allowlist)
     fed_hook = federation_ingest(sk, from_fqid=fqid)
 
     # Mesh bridge holder: TCP-fabric CoT is multicast OUT to mesh devices (iTAK)
