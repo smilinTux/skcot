@@ -20,13 +20,15 @@ import json
 import logging
 import os
 from pathlib import Path
+from typing import Optional
 
-from .codec import parse_cot
+from .codec import COT_CONTENT_TYPE, parse_cot
 from .server import (
     DEFAULT_COT_PORT, DEFAULT_COT_TLS_PORT, CotStreamServer, TlsCotStreamServer,
     UdpMeshListener, federation_ingest,
 )
-from .geo import GeoStore
+from .geo import GeoStore, GeoUnit
+from skcomms.envelope import Envelope
 from skcomms.home import skcomms_home
 from skcomms.identity import resolve_self_identity
 
@@ -36,6 +38,57 @@ logger = logging.getLogger("skcot.service")
 # — TCP, TLS, mesh, or peer-injected — is upserted here so agents and the map
 # read one ground-truth picture. In-memory; positions are re-beaconed.
 GEO_STORE = GeoStore()
+
+
+def consume_cot_inbound(
+    env: Envelope, *, source: str = "federation", source_path: Optional[Path] = None
+) -> Optional[GeoUnit]:
+    """Consume one inbound CoT-bearing Envelope into GEO_STORE. The receiver hook.
+
+    This is the single entry point for turning an *arrived* CoT envelope --
+    however it got here (a peer-federation inbox file, a TCP/TLS/mesh push
+    already wrapped as an Envelope) -- into the CB4 situational picture.
+
+    The core property this exists to guarantee: an ephemeral position beacon
+    (CoT atom, ``a-*``) must land in :data:`GEO_STORE` and must NEVER become a
+    durable mailbox file. So this function:
+
+      * upserts the parsed CoT into :data:`GEO_STORE` (supersede-by-uid --
+        re-beaconing the same entity never accumulates extra state), and
+      * writes nothing to disk itself (no durable inbox copy, ever), and
+      * if *source_path* names the file this envelope arrived as (e.g. a
+        peer-federation inbox drop), deletes it -- so a beacon that DID land
+        as a file on the way in leaves nothing behind on the way out.
+
+    Non-CoT envelopes (wrong ``content_type``) and unparseable CoT bodies are
+    silently ignored (returns ``None``); *source_path*, if given, is left
+    alone in that case since this hook didn't consume it.
+
+    Args:
+        env: The arrived Envelope. Only ``application/cot+xml`` is consumed.
+        source: Attribution tag stored on the :class:`~skcot.geo.GeoUnit`
+            (``GeoUnit.source``), e.g. ``"federation"`` / ``"tcp"`` / ``"mesh"``.
+        source_path: Optional path to the durable file this envelope arrived
+            as. When given and the envelope is consumed, the file is deleted.
+
+    Returns:
+        The upserted :class:`~skcot.geo.GeoUnit`, or ``None`` if the envelope
+        wasn't CoT, was unparseable, or :meth:`GeoStore.upsert_from_cot`
+        skipped it (chat / ping / no usable fix).
+    """
+    if env.content_type != COT_CONTENT_TYPE:
+        return None
+    try:
+        cot = parse_cot(env.body)
+    except ValueError:
+        return None
+    unit = GEO_STORE.upsert_from_cot(cot, source=source)
+    if source_path is not None:
+        try:
+            source_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+    return unit
 
 
 def _extract_cot_body(data: dict) -> str | None:
