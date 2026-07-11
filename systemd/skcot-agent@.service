@@ -1,0 +1,15 @@
+[Unit]
+Description=skcot CoT agent (%i) — AI teammate on the tactical net (name-agnostic)
+After=network.target skcot-service.service
+
+[Service]
+Type=simple
+Environment=SKAGENT=%i
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=%h/.skenv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.skenv/bin/python -m skcot.agent --host 100.108.59.57 --port 8089 --lat 41.1375 --lon -73.4240 --interval 20
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
