@@ -22,7 +22,7 @@ The CoT/TAK subsystem has been extracted from `skcomms` into the standalone `skc
 | `python -m skcomms.cot_agent` | `python -m skcot.agent` |
 
 ### Environment Variables
-**No changes** — all environment variables remain the same:
+**No changes**: all environment variables remain the same.
 - `SKCOMMS_COT_HOST` (host for CoT streaming endpoint)
 - `SKCOMMS_COT_PORT` (port for CoT endpoint)
 - `SKCOMMS_COT_MESH_IFACE` (mesh interface address)
@@ -117,4 +117,4 @@ To revert to the old skcomms-based deployment:
 
 - The skcot package maintains backward compatibility with all existing `SKCOMMS_COT_*` environment variables.
 - Both the main service (`skcot-service.service`) and agent instances (`skcot-agent@<name>.service`) must be configured with the same mesh host/port and TLS settings.
-- Agent spawn location is operator-supplied via `--lat`/`--lon` flags (e.g. `40.0000N, 74.0000W` as a placeholder base — set these to your own deployment coordinates).
+- Agent spawn location is operator-supplied via `--lat`/`--lon` flags (e.g. `40.0000N, 74.0000W` as a placeholder base, set these to your own deployment coordinates).
