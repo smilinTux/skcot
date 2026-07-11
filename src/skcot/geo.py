@@ -377,7 +377,7 @@ class GeoStore:
     def situational_summary(self, *, around: Optional[tuple[float, float]] = None, limit: int = 12) -> str:
         """A short, LLM-readable brief of the current picture.
 
-        e.g. ``"PURE at 41.13700,-73.42400 (12s ago); marker RP-Alpha at
+        e.g. ``"PURE at 40.00000,-74.00000 (12s ago); marker RP-Alpha at
         39.00000,-77.50000. 2 unit(s), 1 marker(s)."``  When ``around`` is
         given, units are ordered nearest-first to that anchor.
         """

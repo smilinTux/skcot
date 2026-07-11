@@ -6,9 +6,13 @@ message through the local LLM. So an operator can GeoChat "LUMINA" from ATAK/iTA
 and get a real answer back on their screen. The thing the military's TAK stack
 cannot do: an AI on the net.
 
-    python -m skcot.agent --host 100.108.59.57 --port 8089 \
+    python -m skcot.agent --host 198.51.100.10 --port 8089 \
         --package ~/.skcapstone/skcomms/cot-pki/packages/lumina-box.zip \
         --callsign LUMINA --lat 40.758 --lon -73.986
+
+(``--host`` is the TAK server's tailnet/LAN IP; the value above is a documentation
+example — RFC 5737 TEST-NET, not a real address. ``--lat``/``--lon`` are likewise
+operator-supplied at deploy time.)
 """
 
 from __future__ import annotations

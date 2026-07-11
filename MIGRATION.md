@@ -117,4 +117,4 @@ To revert to the old skcomms-based deployment:
 
 - The skcot package maintains backward compatibility with all existing `SKCOMMS_COT_*` environment variables.
 - Both the main service (`skcot-service.service`) and agent instances (`skcot-agent@<name>.service`) must be configured with the same mesh host/port and TLS settings.
-- Default agent spawn location: 41.1375N, 73.4240W (Connecticut baseline; override via `--lat`/`--lon` flags).
+- Agent spawn location is operator-supplied via `--lat`/`--lon` flags (e.g. `40.0000N, 74.0000W` as a placeholder base — set these to your own deployment coordinates).

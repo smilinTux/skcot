@@ -59,9 +59,10 @@ logger = logging.getLogger("skcot.pki")
 DEFAULT_P12_PASSWORD = "atakatak"
 DEFAULT_TLS_PORT = 8089
 
-# This node's tailnet identity (overridable per call). Default = noroc2027 (.158).
-NODE_TAILNET_IP = "100.108.59.57"
-NODE_MAGICDNS = "noroc2027.tail204f0c.ts.net"
+# This node's tailnet identity (overridable per call). Example values below;
+# operators set the real tailnet IP/MagicDNS for their own node at deploy time.
+NODE_TAILNET_IP = "198.51.100.10"
+NODE_MAGICDNS = "tak-node.example.ts.net"
 
 _CA_CN = "SKFed CoT CA"
 _VALIDITY_DAYS = 3650  # 10y — sovereign infra, no public PKI lifecycle

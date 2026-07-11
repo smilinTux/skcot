@@ -7,7 +7,9 @@ Type=simple
 Environment=SKAGENT=%i
 Environment=PYTHONUNBUFFERED=1
 Environment=PATH=%h/.skenv/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=%h/.skenv/bin/python -m skcot.agent --host 100.108.59.57 --port 8089 --lat 41.1375 --lon -73.4240 --interval 20
+# --host/--lat/--lon are example values; operators supply their own TAK server IP
+# and base coordinates at deploy time.
+ExecStart=%h/.skenv/bin/python -m skcot.agent --host 198.51.100.10 --port 8089 --lat 40.0000 --lon -74.0000 --interval 20
 Restart=on-failure
 RestartSec=10
 

@@ -48,14 +48,14 @@ def test_ca_create_and_idempotent():
 
 
 def test_server_cert_has_sans_and_serverauth():
-    sans = ["100.108.59.57", "noroc2027.tail204f0c.ts.net"]
+    sans = ["198.51.100.10", "tak-node.example.ts.net"]
     sp, sk = cot_pki.init_server_cert(sans)
     cert = _load_pem_cert(sp)
     san_ext = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
     dns = san_ext.get_values_for_type(x509.DNSName)
     ips = [str(i) for i in san_ext.get_values_for_type(x509.IPAddress)]
-    assert "noroc2027.tail204f0c.ts.net" in dns
-    assert "100.108.59.57" in ips
+    assert "tak-node.example.ts.net" in dns
+    assert "198.51.100.10" in ips
     eku = cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value
     assert ExtendedKeyUsageOID.SERVER_AUTH in eku
     assert sk.exists()
@@ -105,10 +105,10 @@ def test_fingerprint_format():
 
 
 def test_data_package_is_valid_zip_with_all_parts():
-    dp = cot_pki.build_data_package("chef-pixel", "100.108.59.57", port=8089)
+    dp = cot_pki.build_data_package("chef-pixel", "198.51.100.10", port=8089)
     assert dp.path.exists()
-    assert dp.connect_string == "100.108.59.57:8089:ssl"
-    assert dp.host == "100.108.59.57" and dp.port == 8089
+    assert dp.connect_string == "198.51.100.10:8089:ssl"
+    assert dp.host == "198.51.100.10" and dp.port == 8089
     assert "chef-pixel" in dp.identity
     assert len(dp.fingerprint.split(":")) == 32
 
@@ -125,7 +125,7 @@ def test_data_package_is_valid_zip_with_all_parts():
         assert "cert/truststore-CA.p12" in manifest
 
         pref = z.read("chef-pixel.pref").decode()
-        assert "100.108.59.57:8089:ssl" in pref           # connectString
+        assert "198.51.100.10:8089:ssl" in pref           # connectString
         assert "cot_streams" in pref
         assert "cert/truststore-CA.p12" in pref
         assert "cert/chef-pixel.p12" in pref
@@ -143,8 +143,8 @@ def test_data_package_is_valid_zip_with_all_parts():
 
 
 def test_data_package_custom_host_port():
-    dp = cot_pki.build_data_package("itak-1", "noroc2027.tail204f0c.ts.net", port=8090)
-    assert dp.connect_string == "noroc2027.tail204f0c.ts.net:8090:ssl"
+    dp = cot_pki.build_data_package("itak-1", "tak-node.example.ts.net", port=8090)
+    assert dp.connect_string == "tak-node.example.ts.net:8090:ssl"
     with zipfile.ZipFile(dp.path) as z:
         pref = z.read("itak-1.pref").decode()
-        assert "noroc2027.tail204f0c.ts.net:8090:ssl" in pref
+        assert "tak-node.example.ts.net:8090:ssl" in pref

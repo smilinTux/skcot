@@ -7,9 +7,9 @@ Type=simple
 Environment=SKAGENT=lumina
 Environment=SKCAPSTONE_AGENT=lumina
 Environment=PYTHONUNBUFFERED=1
-Environment=SKCOMMS_COT_HOST=100.108.59.57
+Environment=SKCOMMS_COT_HOST=198.51.100.10
 Environment=SKCOMMS_COT_PORT=8087
-Environment=SKCOMMS_COT_MESH_IFACE=100.108.59.57
+Environment=SKCOMMS_COT_MESH_IFACE=198.51.100.10
 Environment=SKCOMMS_COT_TLS=1
 Environment=SKCOMMS_COT_TLS_PORT=8089
 Environment=PATH=%h/.skenv/bin:/usr/local/bin:/usr/bin:/bin

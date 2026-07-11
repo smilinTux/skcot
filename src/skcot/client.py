@@ -6,9 +6,12 @@ position (PLI) on an interval, optionally sends a GeoChat, and prints every CoT
 it receives. Run one on .158 and one on .41 to exercise multi-operator + the
 federation path without a phone.
 
-    python -m skcot.client --host 100.108.59.57 --port 8089 \
+    python -m skcot.client --host 198.51.100.10 --port 8089 \
         --package ~/.skcapstone/skcomms/cot-pki/packages/jarvis-box.zip \
         --callsign JARVIS-BOX --lat 38.95 --lon -77.45
+
+(``--host`` is the TAK server's tailnet/LAN IP; the value above is a documentation
+example — RFC 5737 TEST-NET, not a real address.)
 
 Plain (no TLS):  python -m skcot.client --host 127.0.0.1 --port 8087 --callsign T1
 """

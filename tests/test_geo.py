@@ -23,7 +23,7 @@ def _iso(dt: datetime) -> str:
     return dt.isoformat()
 
 
-def _pli(uid="U1", callsign="PURE", lat=41.137, lon=-73.424, ctype="a-f-G-U-C",
+def _pli(uid="U1", callsign="PURE", lat=40.0, lon=-74.0, ctype="a-f-G-U-C",
          stale_min=5, detail=""):
     now = datetime.now(timezone.utc)
     return CotEvent(
@@ -116,10 +116,10 @@ class TestQuery:
 
     def test_nearest_ordering(self):
         s = GeoStore()
-        s.upsert_from_cot(_pli(uid="far", callsign="FAR", lat=42.0, lon=-73.0))
-        s.upsert_from_cot(_pli(uid="near", callsign="NEAR", lat=41.140, lon=-73.420))
-        s.upsert_from_cot(_pli(uid="mid", callsign="MID", lat=41.5, lon=-73.4))
-        order = [u.callsign for u in s.nearest(41.137, -73.424, n=3)]
+        s.upsert_from_cot(_pli(uid="far", callsign="FAR", lat=40.863, lon=-73.576))
+        s.upsert_from_cot(_pli(uid="near", callsign="NEAR", lat=40.003, lon=-73.996))
+        s.upsert_from_cot(_pli(uid="mid", callsign="MID", lat=40.363, lon=-73.976))
+        order = [u.callsign for u in s.nearest(40.0, -74.0, n=3)]
         assert order == ["NEAR", "MID", "FAR"]
 
     def test_nearest_n_limit(self):
@@ -178,19 +178,19 @@ class TestSummary:
 
     def test_text(self):
         s = GeoStore()
-        s.upsert_from_cot(_pli(uid="U1", callsign="PURE", lat=41.137, lon=-73.424))
+        s.upsert_from_cot(_pli(uid="U1", callsign="PURE", lat=40.0, lon=-74.0))
         s.upsert_from_cot(_pli(uid="m", ctype="b-m-p-s-m", callsign="RP-Alpha",
                                lat=39.0, lon=-77.5))
         txt = s.situational_summary()
-        assert "PURE at 41.13700,-73.42400" in txt
+        assert "PURE at 40.00000,-74.00000" in txt
         assert "marker RP-Alpha at 39.00000,-77.50000" in txt
         assert "1 unit(s)" in txt and "1 marker(s)" in txt
 
     def test_around_orders_nearest_first(self):
         s = GeoStore()
-        s.upsert_from_cot(_pli(uid="far", callsign="FAR", lat=42.0, lon=-73.0))
-        s.upsert_from_cot(_pli(uid="near", callsign="NEAR", lat=41.140, lon=-73.420))
-        txt = s.situational_summary(around=(41.137, -73.424))
+        s.upsert_from_cot(_pli(uid="far", callsign="FAR", lat=40.863, lon=-73.576))
+        s.upsert_from_cot(_pli(uid="near", callsign="NEAR", lat=40.003, lon=-73.996))
+        txt = s.situational_summary(around=(40.0, -74.0))
         assert txt.index("NEAR") < txt.index("FAR")
 
 
@@ -199,7 +199,7 @@ class TestSummary:
 class TestEnvelope:
     def test_single_unit_round_trip(self):
         u = GeoUnit(uid="U1", callsign="PURE", cot_type="a-f-G-U-C",
-                    lat=41.137, lon=-73.424, hae=10.0, course=270.0, speed=1.4,
+                    lat=40.0, lon=-74.0, hae=10.0, course=270.0, speed=1.4,
                     kind="unit", source="mesh")
         env = geo_to_envelope(u, from_fqid="lumina@chef.skworld")
         assert env.content_type == GEO_CONTENT_TYPE
@@ -209,7 +209,7 @@ class TestEnvelope:
         assert len(out) == 1
         r = out[0]
         assert r.uid == "U1" and r.callsign == "PURE" and r.kind == "unit"
-        assert r.lat == 41.137 and r.lon == -73.424
+        assert r.lat == 40.0 and r.lon == -74.0
         assert r.hae == 10.0 and r.course == 270.0 and r.speed == 1.4
 
     def test_collection_round_trip(self):
@@ -224,10 +224,10 @@ class TestEnvelope:
         assert {u.kind for u in out} == {"unit", "marker"}
 
     def test_geojson_lonlat_order(self):
-        u = GeoUnit(uid="U1", callsign="PURE", lat=41.137, lon=-73.424, kind="unit")
+        u = GeoUnit(uid="U1", callsign="PURE", lat=40.0, lon=-74.0, kind="unit")
         feat = u.to_geojson_feature()
         # GeoJSON is [lon, lat]
-        assert feat["geometry"]["coordinates"] == [-73.424, 41.137]
+        assert feat["geometry"]["coordinates"] == [-74.0, 40.0]
 
     def test_wrong_content_type_raises(self):
         env = Envelope(from_fqid="a@b.c", to_fqid="*", content_type="text/plain", body="x")
