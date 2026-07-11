@@ -214,7 +214,7 @@ class TestEnvelope:
 
     def test_collection_round_trip(self):
         units = [
-            GeoUnit(uid="U1", callsign="PURE", lat=41.1, lon=-73.4, kind="unit"),
+            GeoUnit(uid="U1", callsign="PURE", lat=40.5, lon=-74.5, kind="unit"),
             GeoUnit(uid="M1", callsign="RP", lat=39.0, lon=-77.5, kind="marker"),
         ]
         env = geo_to_envelope(units, from_fqid="lumina@chef.skworld")
