@@ -28,6 +28,7 @@ from .server import (
     UdpMeshListener, federation_ingest,
 )
 from .geo import GeoStore, GeoUnit
+from .geo_http import DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, start_geo_http_server
 from skcomms.envelope import Envelope
 from skcomms.home import skcomms_home
 from skcomms.identity import resolve_self_identity
@@ -306,6 +307,19 @@ async def main() -> None:
             logger.info("mesh bridge active (iface=%s) — TCP fabric <-> mesh devices", mesh_iface)
         except Exception as exc:  # noqa: BLE001
             logger.warning("mesh listener not started: %s", exc)
+
+    # CB4 bridge: expose the live GEO_STORE read-only over HTTP so the
+    # skcomms-api daemon (a separate process serving GET /api/v1/geo/units for
+    # SkMap) can source REAL CoT telemetry from this node instead of only its
+    # own in-process fleet seed. GET-only, read-only, fail-soft: a bind failure
+    # logs and does NOT take down the CoT TCP/TLS/mesh service.
+    http_host = os.environ.get("SKCOT_HTTP_HOST", DEFAULT_HTTP_HOST)
+    http_port = int(os.environ.get("SKCOT_HTTP_PORT", str(DEFAULT_HTTP_PORT)))
+    try:
+        await start_geo_http_server(GEO_STORE, http_host, http_port)
+        logger.info("geo HTTP endpoint up on %s:%d (GET /geo/units, read-only)", http_host, http_port)
+    except Exception as exc:  # noqa: BLE001 - HTTP bridge must never crash CoT
+        logger.warning("geo HTTP endpoint not started (%s:%s): %s", http_host, http_port, exc)
 
     await _inbox_inject_loop(server, also=tls_server)
 
