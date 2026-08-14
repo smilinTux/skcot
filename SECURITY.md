@@ -11,8 +11,8 @@ it or reporting an issue.
 > fuzzing, or formal review has been performed on skcot. It binds the vetted `cryptography` library
 > rather than hand-rolling primitives, but the original code is the CA construction, the certificate
 > issuance and packaging, the TLS context and SNI wiring, and the ephemeral/durable routing split.
-> A passing test suite (98 tests, section "Evidence" below) proves interop and behaviour, **not** the
-> absence of side channels, misuse hazards, or protocol flaws. **Review it yourself before
+> A passing test suite (96 hermetic tests, section "Evidence" below) proves interop and behaviour,
+> **not** the absence of side channels, misuse hazards, or protocol flaws. **Review it yourself before
 > production use.** Do not represent skcot as "audited", "production-hardened", or post-quantum.
 
 **Maturity tier: T0 - Classical.** Tier is posture, not assurance. A T0 component is unaudited *and*
@@ -163,7 +163,7 @@ Every claim above is checkable in-repo without a running service.
 | 10-year certs, no revocation | `grep -n '_VALIDITY_DAYS' src/skcot/pki.py`; no CRL or OCSP code exists |
 | Geo bridge is loopback and GET-only | `grep -n 'DEFAULT_HTTP_HOST' src/skcot/geo_http.py` |
 | Beacons never persist durably | `python -m pytest tests/test_beacon_no_durable_persist.py -q` |
-| Behaviour suite | `python -m pytest tests/ -q` -> `98 passed` (2026-08-14, Python 3.12.3) |
+| Behaviour suite | `python -m pytest tests/ -q` -> `96 passed` on a clean host, `98` on a configured cluster member (2026-08-14, Python 3.12.3). Two tests need a cluster.json and are outside the CI gate; see [SOP.md](SOP.md) section 4. |
 
 A passing suite is evidence of behaviour. It is **not** an audit.
 

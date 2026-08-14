@@ -162,30 +162,51 @@ python -m build            # produces dist/skcot-0.1.0-py3-none-any.whl
 
 ## 4. Test
 
-**The green-bar gate: `pytest tests/` must be 98 passed, 0 failed.** 12 test files. `pyproject.toml`
-sets `[tool.pytest.ini_options] pythonpath = ["src"]`, so no install is needed to run them.
+**The green-bar gate: 96 hermetic tests, 0 failed.** There are 98 tests in 12 files, but **two of
+them are not hermetic** and are excluded from the gate; see below. `pyproject.toml` sets
+`[tool.pytest.ini_options] pythonpath = ["src"]`, so no install is needed to run them.
 
 ```bash
 cd ~/clawd/skcapstone-repos/skcot     # or your worktree
-python -m pytest tests/ -q
+python -m pytest tests/ -q            # 98 passed, but only on a configured cluster member
 ```
 
-Verified 2026-08-14 on Python 3.12.3, both in the `~/.skenv` venv and in a clean venv:
-`98 passed, 4 warnings in ~5s`.
+On a host that is already a configured SK cluster member (which the reference node is), all 98
+pass: verified 2026-08-14 on Python 3.12.3 in both `~/.skenv` and a clean venv. In CI, and on any
+fresh clone, the number is 96.
+
+### Two tests depend on host state (known defect)
+
+`tests/test_capability_advertise.py` reaches `skcomms.cluster.load_cluster_config()`, which searches
+`/etc/skcapstone/cluster.json` and `~/.skcapstone/cluster.json` and raises `ClusterConfigError` when
+neither exists. Those two tests therefore pass **only** on a host that is already part of an SK
+cluster. Reproduce the failure anywhere:
+
+```bash
+HOME=$(mktemp -d) python -m pytest tests/ -q     # 2 failed, 96 passed
+```
+
+`.github/workflows/ci.yml` deselects exactly those two by name so the gate is honest about what it
+covers rather than red or fabricated. **The right fix is to make them hermetic** (a fixture or a
+monkeypatched cluster config), not to commit a synthetic `cluster.json` into a public repo. Until
+then, capability advertisement is **not** covered by CI.
 
 ### The clean-environment trap
 
-`pip install pytest pytest-asyncio skcomms takproto` alone gives **4 failures and 2 errors**, all of
-them `ModuleNotFoundError: No module named 'pgpy'`. `pgpy` is reached through skcomms at test time
-but is not pulled in by installing `skcomms` from PyPI, and skcot does not declare it either. **CI
-must install `pgpy` explicitly**, which `.github/workflows/ci.yml` does. Confirmed 2026-08-14: with
-`pgpy` added, the same clean venv reports `98 passed`.
+`pip install pytest pytest-asyncio skcomms takproto` alone gives a further **4 failures and 2
+errors**, all `ModuleNotFoundError: No module named 'pgpy'`. `pgpy` is reached through skcomms at
+test time but is not pulled in by installing `skcomms` from PyPI, and skcot does not declare it
+either. **CI must install `pgpy` explicitly**, which `ci.yml` does.
+
+Note that installing packages into a clean venv does **not** reproduce a clean host: `$HOME` is
+still yours, so a venv-only check will report 98 and hide the cluster.json dependency above. Isolate
+`HOME` as well.
 
 ### What CI actually runs
 
 | Workflow | Gate | Notes |
 |---|---|---|
-| `.github/workflows/ci.yml` | `pytest tests/` on Python 3.10 and 3.12 | Added 2026-08-14. Before that date **nothing ran the test suite at all**, on any push. |
+| `.github/workflows/ci.yml` | 96 hermetic tests on Python 3.10 and 3.12 | Added 2026-08-14. Before that date **nothing ran the test suite at all**, on any push. Two non-hermetic tests are deselected by name; see above. |
 | `.github/workflows/secret-scan.yml` | `gitleaks detect` over the full history, `--exit-code 1` | Real gate, calls the pinned binary, not the licensed action. |
 | `.github/workflows/docs-check.yml` | sk-standards docs-check, `tiers: "1,2"` | Presence + changelog. Tier 3 (the evidence block at the bottom of this file) is written but not yet enforced in CI; promoting to `"1,2,3"` is the follow-up. |
 

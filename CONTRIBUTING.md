@@ -43,20 +43,24 @@ PR bodies. Use commas, parentheses, a colon, or a new sentence. Regular hyphens 
 
 ## The test gate
 
-**Every PR must be `98 passed, 0 failed` (or more, if you added tests).**
+**Every PR must be `0 failed`.** The CI gate is **96 hermetic tests**. The suite reports 98 on a host
+that is already a configured SK cluster member, which is why you should check both:
 
 ```bash
 python -m pytest tests/ -q
+HOME=$(mktemp -d) python -m pytest tests/ -q   # what CI sees: 2 failed, 96 passed
 ```
 
 `pyproject.toml` sets `pythonpath = ["src"]`, so no install is needed. In a clean environment you
-also need `pgpy`, which is an undeclared transitive test dependency; see [SOP.md](SOP.md) section 4.
+also need `pgpy`, an undeclared transitive test dependency. Two tests in
+`tests/test_capability_advertise.py` need a `cluster.json` that CI does not have and are deselected
+by name in `ci.yml`. **Making those two hermetic is a welcome PR.** See [SOP.md](SOP.md) section 4.
 
 CI runs three gates on every push and pull request, and none of them is `|| true`:
 
 | Workflow | What it enforces |
 |---|---|
-| `ci.yml` | `pytest tests/` on Python 3.10 and 3.12 |
+| `ci.yml` | 96 hermetic tests on Python 3.10 and 3.12 |
 | `secret-scan.yml` | `gitleaks detect` over the full history, `--exit-code 1` |
 | `docs-check.yml` | sk-standards docs-check, presence and changelog tiers |
 

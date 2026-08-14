@@ -14,8 +14,8 @@ standard TAK protocol talking to a server you run.
 
 > ⚠️ **Experimental, unaudited, self-built reference implementation.** skcot runs its own X.509
 > certificate authority (`src/skcot/pki.py`) and terminates TLS. No independent third-party
-> security audit, fuzzing, or formal review has been performed. Its 98 tests prove behaviour and
-> interop, **not** the absence of side-channel or implementation flaws. The asymmetric crypto is
+> security audit, fuzzing, or formal review has been performed. Its 96 hermetic tests prove
+> behaviour and interop, **not** the absence of side-channel or implementation flaws. The asymmetric crypto is
 > **classical RSA-2048 (maturity tier T0)**, the CA and server private keys are written to disk
 > **unencrypted**, and the TLS listener is configured with `ssl.CERT_OPTIONAL`, so a client
 > certificate identifies a device but does **not** gate access. Access control is the tailnet bind,

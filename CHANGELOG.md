@@ -22,10 +22,11 @@ All notable changes to skcot are documented here. The format follows
   `docs-evidence` block of 14 hermetic repo-local checks pinning the ports, the entry point, the
   unit name, the absence of a console script, the config env prefix, and the three security facts
   that `SECURITY.md` discloses (RSA-2048, unencrypted keys at rest, optional client certs).
-- **`.github/workflows/ci.yml`**, running `pytest tests/` on Python 3.10 and 3.12. **Nothing had
-  ever run the test suite.** The only workflow on `main` was `secret-scan.yml`, while 12 test files
-  and a configured `[tool.pytest.ini_options]` sat unexecuted on every push. Verified green before
-  the gate was added: `98 passed` in a clean venv.
+- **`.github/workflows/ci.yml`**, running the test suite on Python 3.10 and 3.12. **Nothing had ever
+  run the test suite.** The only workflow on `main` was `secret-scan.yml`, while 12 test files and a
+  configured `[tool.pytest.ini_options]` sat unexecuted on every push. The gate covers **96 hermetic
+  tests**; the two in `tests/test_capability_advertise.py` are deselected by name because they are
+  not hermetic (see Known gaps).
 - **`.github/workflows/docs-check.yml`**, the sk-standards docs gate at tiers 1 and 2.
 - **`EnvironmentFile=-%h/.config/skcot/skcot.env`** in both shipped systemd units, read after the
   unit's own `Environment=` lines, so a site can supply real values without editing a shipped file.
@@ -74,6 +75,14 @@ All notable changes to skcot are documented here. The format follows
   `SOP.md` "Unverified".
 
 ### Known gaps
+- **Two tests are not hermetic and are outside the CI gate.**
+  `tests/test_capability_advertise.py` reaches `skcomms.cluster.load_cluster_config()`, which
+  searches `/etc/skcapstone/cluster.json` and `~/.skcapstone/cluster.json` and raises
+  `ClusterConfigError` when neither exists, so both tests pass only on a host that is already a
+  configured SK cluster member. Reproduce with `HOME=$(mktemp -d) python -m pytest tests/ -q` ->
+  `2 failed, 96 passed`. They are deselected by name in `ci.yml` rather than shipping a fabricated
+  `cluster.json` into a public repo or letting a new gate start red. **Capability advertisement is
+  therefore not covered by CI.** The fix is to make them hermetic.
 - No `/health` endpoint exists. The nearest liveness probe is `GET http://127.0.0.1:8091/geo/units`.
 - No self-report or `doctor` command, so skcot cannot evidence its own negotiated primitives. This
   is what keeps it below tier T1 (Agile).
