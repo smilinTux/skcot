@@ -1,0 +1,48 @@
+name: ci
+
+# The test gate. Until 2026-08-14 NOTHING ran this repo's test suite: the only
+# workflow on main was secret-scan.yml, while 12 test files and a configured
+# [tool.pytest.ini_options] sat unexecuted on every push.
+#
+# Verified green in a clean venv before this gate was added (Python 3.12.3,
+# 2026-08-14): 98 passed.
+#
+# `pgpy` is installed explicitly on purpose. It is reached through skcomms at
+# test time but is pulled in by NEITHER skcot's pyproject NOR skcomms as
+# published to PyPI. Without it you get 4 failures and 2 errors, all
+# ModuleNotFoundError. See SOP.md section 4.
+#
+# No step here is `|| true`. Every one of them can fail the build.
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # pyproject sets requires-python = ">=3.10"; test the floor and the
+        # version the reference node actually runs.
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          # skcomms is the one hard dependency; takproto is the [tak] extra;
+          # pgpy is the undeclared transitive test dependency.
+          python -m pip install pytest pytest-asyncio skcomms takproto pgpy
+
+      - name: Run the test suite
+        # pyproject sets pythonpath = ["src"], so no install of skcot is needed.
+        run: python -m pytest tests/ -q

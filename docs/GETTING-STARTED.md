@@ -1,6 +1,8 @@
 # Getting Started
 
-This walks through installing skcot, enrolling a device, starting the endpoint, and putting an AI teammate on the net. All host, port, and coordinate values below are placeholders; substitute your own deployment values wherever you see `$TAK_HOST`, `$LAT`, `$LON`, or the example address `198.51.100.10` (an RFC 5737 documentation address, not a real one).
+This walks through installing skcot, enrolling a device, starting the endpoint, and putting an AI teammate on the net. All host and coordinate values below are placeholders: substitute your own deployment values wherever you see `$TAK_HOST`, `$LAT`, or `$LON`. `$TAK_HOST` must be the tailnet IP of the node running the service.
+
+> This is the narrative walkthrough. **[../SOP.md](../SOP.md) is the operational source of truth** for deploy, rollback, the full environment-variable table, the API surface, and troubleshooting. Where the two disagree, the SOP is right.
 
 ## Install
 
@@ -42,14 +44,24 @@ This connects to the endpoint as a unit, beacons a friendly position (CoT type `
 
 ## Running it as a service
 
-Systemd units for both pieces ship in the repo (`systemd/skcot-service.service` and `systemd/skcot-agent@.service`), so you don't have to run either command by hand in a terminal session:
+Systemd units for both pieces ship in the repo (`systemd/skcot.service` and `systemd/skcot-agent@.service`), so you don't have to run either command by hand in a terminal session.
+
+**Both units ship deliberate `REPLACE_ME_...` placeholders and will not start until you supply real values.** That is intentional: leaving `SKCOMMS_COT_HOST` unset makes the service fall back to `0.0.0.0` and bind a tactical endpoint on every interface, so it fails closed instead. Put your values in `~/.config/skcot/skcot.env`, which the unit reads after its own defaults:
 
 ```bash
 cp skcot/systemd/*.service ~/.config/systemd/user/
+mkdir -p ~/.config/skcot
+cat > ~/.config/skcot/skcot.env <<'EOF'
+SKCOMMS_COT_HOST=<this node's tailnet IP>
+SKCOMMS_COT_MESH_IFACE=<this node's tailnet IP>
+SKCOMMS_COT_SNI_NAME=<this node's MagicDNS name>
+EOF
 systemctl --user daemon-reload
-systemctl --user enable --now skcot-service
+systemctl --user enable --now skcot
 systemctl --user enable --now skcot-agent@<name>
 ```
+
+The service unit is named `skcot.service`, not `skcot-service.service`; see [MIGRATION.md](MIGRATION.md) for the rename history. Note that no `skcot-agent@` instance is deployed anywhere today, so that last line is an untested path.
 
 If you are migrating from the older `skcomms.cot_service` / `skcomms.cot_agent` modules and their `skcomms-cot*` unit names, see [MIGRATION.md](MIGRATION.md) for the full unit-rename table, environment variable notes, and rollback steps.
 

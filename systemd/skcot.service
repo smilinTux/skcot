@@ -1,0 +1,89 @@
+# skcot CoT/TAK service - the TAK/ATAK streaming endpoint.
+#
+# Unit name: this file is `skcot.service`, matching the unit name actually
+# installed and running on the reference node (noroc2027). It was previously
+# shipped as `skcot-service.service`, which did NOT match any deployment. See
+# SOP.md section 5 and docs/MIGRATION.md for the rename history.
+#
+# ── BEFORE YOU DEPLOY ────────────────────────────────────────────────────────
+# This unit ships with a DELIBERATE, NON-ROUTABLE placeholder for the bind
+# address. It is not a working default and it is not meant to be one.
+#
+#   SKCOMMS_COT_HOST       = the address the CoT listeners bind to
+#   SKCOMMS_COT_MESH_IFACE = the local interface address the mesh listener joins on
+#
+# Both MUST be set to THIS node's own tailnet IP. Two ways to do it, pick one:
+#
+#   1. (preferred) Drop the real values in ~/.config/skcot/skcot.env. The
+#      EnvironmentFile= line below is read AFTER these Environment= lines, so
+#      anything in that file wins, and this unit stays pristine and updatable:
+#
+#          SKCOMMS_COT_HOST=100.108.59.57
+#          SKCOMMS_COT_MESH_IFACE=100.108.59.57
+#          SKCOMMS_COT_SNI_NAME=<node>.<tailnet>.ts.net
+#
+#   2. Or `systemctl --user edit skcot` and override them in a drop-in.
+#
+# Why a placeholder string and not an IP: leaving SKCOMMS_COT_HOST unset makes
+# skcot fall back to 0.0.0.0 (src/skcot/service.py:231), which would expose the
+# tactical endpoint on EVERY interface including any public one. A placeholder
+# that cannot resolve fails the bind loudly at startup instead. Check
+# `journalctl --user -u skcot -n 50` if the service will not come up.
+[Unit]
+Description=skcot CoT/TAK service (TAK/ATAK streaming :8087 plain / :8089 TLS - fqid from identity)
+Documentation=https://github.com/smilinTux/skcot/blob/main/SOP.md
+After=network-online.target tailscaled.service skcomms-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=SKAGENT=lumina
+Environment=SKCAPSTONE_AGENT=lumina
+Environment=PYTHONUNBUFFERED=1
+
+# ── PLACEHOLDER: override both of these. See the header block above. ──────────
+Environment=SKCOMMS_COT_HOST=REPLACE_ME_WITH_THIS_NODES_TAILNET_IP
+Environment=SKCOMMS_COT_MESH_IFACE=REPLACE_ME_WITH_THIS_NODES_TAILNET_IP
+
+Environment=SKCOMMS_COT_PORT=8087
+Environment=SKCOMMS_COT_TLS=1
+Environment=SKCOMMS_COT_TLS_PORT=8089
+
+# Server cert/key presented on :8089. `python -m skcot.pki init` writes
+# cot-pki/server.pem + server.key; point at those if you are not using a
+# publicly-trusted cert. The paths below are the reference node's, which uses a
+# `tailscale cert` (Let's Encrypt) pair so strict clients such as iTAK trust the
+# endpoint without importing the sovereign CA.
+Environment=SKCOMMS_COT_TLS_CERT=%h/.skcapstone/skcomms/cot-pki/ts-cot.crt
+Environment=SKCOMMS_COT_TLS_KEY=%h/.skcapstone/skcomms/cot-pki/ts-cot.key
+
+# SNI split (src/skcot/server.py:331-345): a client connecting by the MagicDNS
+# NAME gets the publicly-trusted cert; a client connecting by IP gets the PKI
+# cert its data package already trusts. All three must be set or the SNI
+# callback is not installed at all. SNI_NAME is node-specific: override it.
+Environment=SKCOMMS_COT_SNI_CERT=%h/.skcapstone/skcomms/cot-pki/ts-cot.crt
+Environment=SKCOMMS_COT_SNI_KEY=%h/.skcapstone/skcomms/cot-pki/ts-cot.key
+Environment=SKCOMMS_COT_SNI_NAME=REPLACE_ME_WITH_THIS_NODES_MAGICDNS_NAME
+
+Environment=PATH=%h/.skenv/bin:/usr/local/bin:/usr/bin:/bin
+
+# Read last so site-specific values override every Environment= above.
+# The leading `-` makes the file optional: no file, no failure.
+EnvironmentFile=-%h/.config/skcot/skcot.env
+
+# `-` prefix: tolerate the directory not existing on a node that installed skcot
+# from a wheel rather than an editable checkout.
+WorkingDirectory=-%h/clawd/skcapstone-repos/skcot
+
+ExecStart=%h/.skenv/bin/python -m skcot.service
+Restart=on-failure
+RestartSec=10
+
+# SERVICE_UNIT_STANDARD Tier A: backoff only, this must never permanently die.
+# RestartSec x (Burst-1) must exceed StartLimitIntervalSec or the start limiter
+# never engages and a 203/EXEC unit retries forever (prb-bd79dd5f).
+RestartSteps=8
+RestartMaxDelaySec=5min
+
+[Install]
+WantedBy=default.target
