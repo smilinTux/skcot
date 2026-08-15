@@ -1,17 +1,45 @@
+# skcot CoT agent (%i) - the AI teammate that appears as a contact on the net.
+#
+# ── BEFORE YOU DEPLOY ────────────────────────────────────────────────────────
+# --host and --lat/--lon below are PLACEHOLDERS. `python -m skcot.agent`
+# requires --host (src/skcot/agent.py:165), so there is no working default:
+# point it at the tailnet IP of the node running skcot.service, and set the
+# beacon spawn coordinates you actually want.
+#
+# Preferred: put the real command line in a drop-in rather than editing this
+# file, so upgrades do not clobber it:
+#
+#     systemctl --user edit skcot-agent@lumina
+#     [Service]
+#     ExecStart=
+#     ExecStart=%h/.skenv/bin/python -m skcot.agent --host 100.108.59.57 \
+#         --port 8089 --lat 40.7580 --lon -73.9860 --interval 20
+#
+# NOTE: as of 2026-08-14 no skcot-agent@ instance is installed or running on the
+# reference node (noroc2027). Only skcot.service runs there. This template is
+# shipped and syntactically correct but is NOT a deployed-and-proven path.
 [Unit]
-Description=skcot CoT agent (%i) — AI teammate on the tactical net (name-agnostic)
-After=network.target skcot-service.service
+Description=skcot CoT agent (%i) - AI teammate on the tactical net (name-agnostic)
+Documentation=https://github.com/smilinTux/skcot/blob/main/SOP.md
+After=network-online.target skcot.service
+Wants=network-online.target
+Requires=skcot.service
 
 [Service]
 Type=simple
 Environment=SKAGENT=%i
 Environment=PYTHONUNBUFFERED=1
 Environment=PATH=%h/.skenv/bin:/usr/local/bin:/usr/bin:/bin
-# --host/--lat/--lon are example values; operators supply their own TAK server IP
-# and base coordinates at deploy time.
-ExecStart=%h/.skenv/bin/python -m skcot.agent --host 198.51.100.10 --port 8089 --lat 40.0000 --lon -74.0000 --interval 20
+EnvironmentFile=-%h/.config/skcot/skcot-agent.env
+WorkingDirectory=-%h/clawd/skcapstone-repos/skcot
+
+# ── PLACEHOLDER command line. Override it, see the header block above. ────────
+ExecStart=%h/.skenv/bin/python -m skcot.agent --host REPLACE_ME_WITH_THE_COT_NODES_TAILNET_IP --port 8089 --lat 0.0 --lon 0.0 --interval 20
+
 Restart=on-failure
 RestartSec=10
+RestartSteps=8
+RestartMaxDelaySec=5min
 
 [Install]
 WantedBy=default.target

@@ -1,0 +1,21 @@
+name: docs-check
+
+# SK_REPO_DOC_STANDARD gate. Tiers 1 and 2 (required-doc presence, and a
+# CHANGELOG entry alongside a code change).
+#
+# SOP.md already carries a tier-3 `docs-evidence` block of 14 hermetic
+# repo-local checks. It is deliberately NOT enforced here yet: the standard's
+# rollout path is to let 1+2 run clean first, then promote to "1,2,3" as a
+# follow-up. Run tier 3 locally with:
+#   python3 sk-standards/scripts/docs_check.py --repo . --tier 3
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    uses: smilinTux/sk-standards/.github/workflows/docs-check.yml@main
+    with:
+      tiers: "1,2"
